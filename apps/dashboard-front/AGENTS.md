@@ -37,3 +37,4 @@ These rules apply to `apps/dashboard-front`.
 
 - Run `pnpm --filter dashboard-front lint` after frontend changes when dependencies are installed.
 - Run stronger checks such as build/type checks when the change touches routing, data loading, or shared component contracts and the scripts exist.
+- Do not run route smoke tests, browser smoke tests, or manual curl checks unless explicitly requested. Dev-server behavior is manually verified by the user.

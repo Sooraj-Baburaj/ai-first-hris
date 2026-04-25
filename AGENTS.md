@@ -4,7 +4,7 @@
 
 Closed AI is an AI-first workforce lifecycle platform for HR teams. It transforms HR from a passive system of records into an active multimodal AI workforce layer that can understand documents, speak with candidates and employees, automate workflows, answer questions, coordinate tasks, and surface intelligence across the employee lifecycle.
 
-Treat the system as a production-grade, multi-tenant full-stack TypeScript monorepo. It may include a dashboard frontend, Express/MongoDB backend, shared packages, AI agents, voice/chat channels, document processing, ticketing integrations, workflow automation, and third-party communication channels.
+Treat the system as a production-grade, single-company full-stack TypeScript monorepo for Closed AI. It may include a dashboard frontend, Express/MongoDB backend, shared packages, AI agents, voice/chat channels, document processing, ticketing integrations, workflow automation, and third-party communication channels.
 
 Write clean, modular, strictly typed code. Prefer small files, focused functions, guard clauses, and existing project patterns over broad refactors. Build for reliability, auditability, and enterprise readiness.
 
@@ -15,6 +15,12 @@ The first dashboard version is primarily for HR admins and recruiters.
 Candidates and employees may interact with Closed AI through chat, voice, WhatsApp, email, or embedded agent flows, but the main dashboard should serve internal HR/recruiting teams who manage hiring, onboarding, employee support, workflows, documents, and insights.
 
 Do not design the first dashboard as a general consumer-facing app for all user types. Candidate and employee experiences can exist as assisted workflows, portals, or communication endpoints, but the operational control surface belongs to HR teams first.
+
+## MVP Auth And Role Routing
+
+For the basic MVP, it is acceptable to route hardcoded demo emails and selected user types into role-specific URLs without building full authentication, sessions, or RBAC. Make this explicit in copy and docs so demo behavior is not confused with production security.
+
+Closed AI should be modeled as a system for one company. Keep recruiter, candidate, and employee role selection centralized for the MVP. Unknown/random emails should fall back to the candidate experience. Production work must replace this with verified auth, role checks, and server-enforced data boundaries.
 
 ## Brand Personality
 
@@ -126,7 +132,7 @@ Prioritize:
 - Actionable AI suggestions
 - Audit trails
 - Human handoff states
-- Multi-tenant account separation
+- Clear recruiter, candidate, and employee role separation
 - Secure handling of candidate and employee data
 
 Avoid:
@@ -157,7 +163,7 @@ A strong first version may include:
 - Workflow automation logs
 - Knowledge base management
 - Learning recommendations
-- Settings, teams, roles, and tenant controls
+- Settings, teams, roles, and company controls
 
 ## AI Behavior Expectations
 
@@ -177,7 +183,7 @@ Do not present AI as magic. Present it as a capable assistant that accelerates H
 
 ## Engineering Expectations
 
-Build as a production-grade multi-tenant TypeScript system.
+Build as a production-grade single-company TypeScript system with clear role boundaries.
 
 Prefer:
 
@@ -190,18 +196,18 @@ Prefer:
 - Small React components
 - Accessible UI primitives
 - Secure API boundaries
-- Tenant-aware data access
+- Role-aware data access
 - Explicit loading, empty, and error states
 
 Avoid:
 
 - Broad rewrites
 - Untyped objects
-- Hardcoded tenant data
-- Mock-only flows pretending to be production logic
+- Hardcoded production user data
+- Mock-only flows pretending to be production logic. Static MVP demo flows are acceptable only when clearly labeled as non-production.
 - Large components with mixed responsibilities
 - AI features with no persistence or audit trail
-- Sensitive HR data leaking across tenants
+- Sensitive HR data leaking across user roles
 
 ## Data Sensitivity
 
@@ -212,7 +218,7 @@ Always consider:
 - Privacy
 - Consent
 - Role-based access
-- Tenant isolation
+- Role isolation
 - Audit logs
 - Secure document handling
 - Clear escalation paths
@@ -267,4 +273,5 @@ If the summary file does not exist, do not create it for tiny changes. Create it
 - Run the most specific relevant checks after changes.
 - For frontend work, prefer `pnpm --filter @closed-ai/dashboard-front lint` and type/build checks when available.
 - For backend work, run the backend lint/test commands when the backend package exists.
+- Do not run route smoke tests, browser smoke tests, or manual curl checks for the dashboard unless explicitly requested. The user will manually verify dev-server behavior.
 - If a check cannot run because the package/script does not exist yet, mention that in the final response.

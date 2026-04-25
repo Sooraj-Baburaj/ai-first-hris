@@ -1,65 +1,61 @@
-import Image from "next/image";
+import Link from "next/link";
+import { EmailLoginForm } from "@/app/components/organisms/EmailLoginForm";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="min-h-screen bg-[var(--background)] px-4 py-6 text-[var(--ink)] sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100vh-3rem)] max-w-6xl items-center gap-10 lg:grid-cols-[1fr_440px]">
+        <section className="grid gap-10">
+          <Link
+            className="flex w-fit items-center gap-3 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ring)]"
+            href="/"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <span className="flex size-11 items-center justify-center rounded-full bg-[var(--ink)] font-display text-xl font-light text-[var(--background)] shadow-[var(--shadow-card)]">
+              C
+            </span>
+            <span>
+              <span className="block text-[15px] font-medium leading-[1.33] tracking-[0.15px]">
+                Closed AI
+              </span>
+              <span className="block text-sm tracking-[0.14px] text-[var(--quiet)]">
+                Role-based MVP demo
+              </span>
+            </span>
+          </Link>
+          <div className="grid max-w-3xl gap-5">
+            <p className="font-cta text-sm font-bold uppercase leading-[1.1] tracking-[0.7px] text-[var(--ink)]">
+              HR operating layer
+            </p>
+            <h1 className="font-display text-5xl font-light leading-[1.08] tracking-[-0.96px] text-[var(--ink)] sm:text-6xl">
+              Enter the right Closed AI workspace.
+            </h1>
+            <p className="max-w-2xl text-lg font-normal leading-[1.6] tracking-[0.18px] text-[var(--muted)]">
+              A calm MVP entry point for recruiters, candidates, and employees,
+              with role-specific views over the same workforce AI layer.
+            </p>
+          </div>
+          <div className="grid gap-3 rounded-3xl bg-[var(--surface-soft)] p-3 shadow-[var(--shadow-inset)] sm:grid-cols-3">
+            {[
+              ["1", "recruiter sign-in"],
+              ["1", "employee sign-in"],
+              ["Any", "candidate email"],
+            ].map(([value, label]) => (
+              <div
+                className="rounded-2xl bg-[var(--surface)] p-5 shadow-[var(--shadow-outline)]"
+                key={label}
+              >
+                <p className="font-display text-3xl font-light leading-[1.13] text-[var(--ink)]">
+                  {value}
+                </p>
+                <p className="mt-1 text-sm leading-[1.43] tracking-[0.14px] text-[var(--muted)]">
+                  {label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+        <EmailLoginForm />
+      </div>
+    </main>
   );
 }
