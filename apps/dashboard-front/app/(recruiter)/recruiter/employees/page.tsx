@@ -2,9 +2,21 @@ import { PageHeader } from "@/app/components/molecules/PageHeader";
 import { Toolbar } from "@/app/components/molecules/Toolbar";
 import { EmployeeList } from "@/app/components/organisms/EmployeeList";
 import { RecruiterShell } from "@/app/components/templates/RecruiterShell";
-import { employees } from "@/app/lib/recruiter-data";
+import { apiGet } from "@/app/lib/api";
+import type { EmployeeListResponseDto } from "@closed-ai/types";
 
-export default function RecruiterEmployeesPage() {
+async function getEmployees() {
+  try {
+    const response = await apiGet<EmployeeListResponseDto>("/api/v1/recruiter/employees");
+    return { items: response.items, error: null as string | null };
+  } catch {
+    return { items: [], error: "Could not load employees right now." };
+  }
+}
+
+export default async function RecruiterEmployeesPage() {
+  const { items, error } = await getEmployees();
+
   return (
     <RecruiterShell active="Employees">
       <div className="grid gap-6">
@@ -14,7 +26,10 @@ export default function RecruiterEmployeesPage() {
           title="Employee directory"
         />
         <Toolbar primaryFilter="All statuses" secondaryFilter="Updated today" />
-        <EmployeeList employees={employees} />
+        {error ? (
+          <p className="rounded-2xl bg-[var(--rose-soft)] px-4 py-3 text-sm text-[var(--rose)]">{error}</p>
+        ) : null}
+        <EmployeeList employees={items} />
       </div>
     </RecruiterShell>
   );

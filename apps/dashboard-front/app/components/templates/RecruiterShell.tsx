@@ -2,6 +2,7 @@ import { DemoLogoutButton } from "@/app/components/molecules/DemoLogoutButton";
 import Link from "next/link";
 
 const navItems = [
+  { href: "/recruiter/jobs", label: "Jobs" },
   { href: "/recruiter/candidates", label: "Candidates" },
   { href: "/recruiter/employees", label: "Employees" },
   { path: null, label: "Onboarding" },
@@ -13,7 +14,7 @@ export function RecruiterShell({
   active,
   children,
 }: {
-  active: "Candidates" | "Employees";
+  active: "Jobs" | "Candidates" | "Employees";
   children: React.ReactNode;
 }) {
   return (

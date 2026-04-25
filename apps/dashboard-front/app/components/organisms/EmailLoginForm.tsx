@@ -1,27 +1,35 @@
 "use client";
 
-import {
-  demoLoginUsers,
-  demoUserTypes,
-  resolveDemoLogin,
-  type DemoUserType,
-} from "@/app/lib/recruiter-data";
+import { apiPost } from "@/app/lib/api";
+import { demoLoginUsers } from "@/app/lib/recruiter-data";
 import { saveDemoSession } from "@/app/lib/demo-session";
+import type { ResolveRoleResponseDto } from "@closed-ai/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function EmailLoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("candidate@closedai.com");
-  const [userType, setUserType] = useState<DemoUserType>("candidate");
-  const [sent, setSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const login = resolveDemoLogin(email, userType);
-    saveDemoSession(login);
-    setSent(true);
-    router.push(login.route);
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const login = await apiPost<ResolveRoleResponseDto>("/api/v1/auth/resolve-role", {
+        email,
+      });
+
+      saveDemoSession(login);
+      router.push(login.route);
+    } catch {
+      setError("Could not resolve workspace. Try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -41,7 +49,7 @@ export function EmailLoginForm() {
           className="min-h-12 rounded-full bg-[var(--surface)] px-5 text-base font-normal leading-[1.5] tracking-[0.16px] text-[var(--ink)] shadow-[var(--shadow-outline)] placeholder:text-[var(--quiet)] focus:shadow-[0_0_0_3px_var(--ring),var(--shadow-outline)]"
           onChange={(event) => {
             setEmail(event.target.value);
-            setSent(false);
+            setError(null);
           }}
           placeholder="candidate@closedai.com"
           required
@@ -49,36 +57,21 @@ export function EmailLoginForm() {
           value={email}
         />
       </div>
-      <div className="grid gap-2">
-        <p className="text-sm font-medium leading-[1.43] tracking-[0.14px] text-[var(--ink)]">
-          View as
-        </p>
-        <div className="grid grid-cols-3 gap-2 rounded-full bg-[var(--surface-soft)] p-1 shadow-[var(--shadow-inset)]">
-          {demoUserTypes.map((type) => (
-            <button
-              className={`min-h-10 rounded-full px-3 text-sm font-medium leading-[1.43] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
-                userType === type.value
-                  ? "bg-[var(--ink)] text-[var(--surface)] shadow-[var(--shadow-card)]"
-                  : "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--ink)]"
-              }`}
-              key={type.value}
-              onClick={() => {
-                setUserType(type.value);
-                setSent(false);
-              }}
-              type="button"
-            >
-              {type.label}
-            </button>
-          ))}
-        </div>
-      </div>
+
       <button
-        className="min-h-12 rounded-full bg-[var(--ink)] px-5 text-[15px] font-medium leading-[1.47] text-[var(--surface)] shadow-[var(--shadow-card)] transition hover:bg-[var(--muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+        className="min-h-12 rounded-full bg-[var(--ink)] px-5 text-[15px] font-medium leading-[1.47] text-[var(--surface)] shadow-[var(--shadow-card)] transition hover:bg-[var(--muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:cursor-not-allowed disabled:opacity-70"
+        disabled={isSubmitting}
         type="submit"
       >
-        {sent ? "Opening workspace" : "Continue"}
+        {isSubmitting ? "Opening workspace" : "Continue"}
       </button>
+
+      {error ? (
+        <p className="rounded-2xl bg-[var(--rose-soft)] px-4 py-3 text-sm text-[var(--rose)]">
+          {error}
+        </p>
+      ) : null}
+
       <div className="grid gap-2">
         <p className="text-xs font-medium uppercase leading-[1.33] tracking-[0.14em] text-[var(--quiet)]">
           Demo sign-ins
@@ -90,22 +83,21 @@ export function EmailLoginForm() {
               key={user.email}
               onClick={() => {
                 setEmail(user.email);
-                setUserType(user.type);
-                setSent(false);
+                setError(null);
               }}
               type="button"
             >
               <span>{user.email}</span>
-              <span className="text-xs font-normal text-[var(--quiet)]">
-                {user.label}
-              </span>
+              <span className="text-xs font-normal text-[var(--quiet)]">{user.label}</span>
             </button>
           ))}
         </div>
       </div>
+
       <p className="text-sm leading-[1.5] tracking-[0.14px] text-[var(--muted)]">
-        No password for this MVP. The email and selected user type pick a demo
-        route; unknown emails open the candidate portal.
+        MVP routing is backend-driven: recruiter email goes to recruiter workspace,
+        known employee emails open employee portal, and any other email opens the
+        candidate portal.
       </p>
     </form>
   );
