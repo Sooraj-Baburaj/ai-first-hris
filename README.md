@@ -1,159 +1,94 @@
-# Turborepo starter
+# Closed AI
 
-This Turborepo starter is maintained by the Turborepo core team.
+### *An AI-first workforce lifecycle platform for HR teams.*
 
-## Using this example
+**Built for the Codex Hackathon.**
 
-Run the following command:
+Closed AI transforms HR from a passive system of records into an active multimodal AI workforce layer. It empowers HR teams to understand documents, speak with candidates and employees, automate workflows, and surface intelligence across the entire employee lifecycle.
 
-```sh
-npx create-turbo@latest
+---
+
+## 🚀 Overview
+
+Closed AI is designed as a production-grade, single-company full-stack TypeScript monorepo. It centralizes operational control for HR admins and recruiters while providing assisted workflows for candidates and employees through multimodal channels (voice, chat, etc.).
+
+### Core Pillars
+1.  **Agentic Talent Acquisition**: Automated resume parsing, candidate profile extraction, and voice-driven screening.
+2.  **Multimodal Autonomous Onboarding**: Post-offer coordination, document collection reminders, and start-date tracking.
+3.  **24/7 Helpdesk**: Automated HR assistance for policy questions, status updates, and support tickets.
+4.  **Hyper-Personalized L&D**: Role-aware learning paths and skill-gap analysis for employee growth.
+
+---
+
+## 🛠 Tech Stack
+
+-   **Frontend**: Next.js 15+, React, Tailwind CSS.
+-   **Backend**: Express, Node.js, MongoDB (Mongoose).
+-   **AI Infrastructure**: LiveKit Agents (Real-time Voice/Inference), OpenAI, Deepgram, ElevenLabs.
+-   **Monorepo**: Turborepo, pnpm workspaces.
+-   **Language**: Strict TypeScript.
+
+---
+
+## 🏃 Getting Started
+
+### Prerequisites
+
+-   [pnpm](https://pnpm.io/installation) (Required)
+-   [MongoDB](https://www.mongodb.com/docs/manual/installation/) (Running locally or a connection string)
+-   [LiveKit Cloud Account](https://cloud.livekit.io/) (For voice agents and inference)
+
+### 1. Installation
+
+```bash
+pnpm install
 ```
 
-## What's inside?
+### 2. Environment Setup
 
-This Turborepo includes the following packages/apps:
+Create `.env` files in the following locations based on their respective `.env.example` templates:
 
-### Apps and Packages
+-   `apps/backend/.env`
+-   `apps/dashboard-front/.env.local`
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+**Essential Keys:**
+- `LIVEKIT_URL`
+- `LIVEKIT_API_KEY`
+- `LIVEKIT_API_SECRET`
+- `MONGODB_URI`
+- `OPENAI_API_KEY`
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+### 3. Development
 
-### Utilities
+To start all applications (Frontend, Backend API, and AI Agent) in development mode:
 
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+pnpm dev
 ```
 
-Without global `turbo`, use your package manager:
+#### Individual Workspace Commands:
+-   **Frontend**: `pnpm --filter @closed-ai/dashboard-front dev`
+-   **Backend API**: `pnpm --filter @closed-ai/backend dev:api`
+-   **AI Agent**: `pnpm --filter @closed-ai/backend agent:dev`
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
-```
+---
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## 👔 Brand Personality
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Closed AI is built to be **Calm, Intelligent, and Trustworthy**. The interface prioritizes clarity, document readability, and actionable AI insights over flashy animations or gimmicks. It is designed to feel like a serious HR operating system.
 
-```sh
-turbo build --filter=docs
-```
+---
 
-Without global `turbo`:
+## 📁 Repository Structure
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+-   `apps/dashboard-front`: Next.js dashboard for recruiters and admins.
+-   `apps/backend`: Express server and LiveKit AI agents.
+-   `packages/types`: Shared TypeScript definitions and API contracts.
+-   `packages/typescript-config`: Shared tsconfig presets.
+-   `packages/eslint-config`: Shared linting rules.
 
-### Develop
+---
 
-To develop all apps and packages, run the following command:
+## ⚖️ License
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+Private - All rights reserved. Created for the Codex Hackathon.

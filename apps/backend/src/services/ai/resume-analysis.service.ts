@@ -6,6 +6,10 @@ import { env } from "../../config/env.js";
 import { AppError } from "../../lib/app-error.js";
 
 const resumeAnalysisSchema = z.object({
+  candidateIdentity: z.object({
+    fullName: z.string().nullable(),
+    email: z.string().nullable(),
+  }),
   summary: z.string().min(1),
   confidence: z.number().min(0).max(100),
   status: z.enum(["under_review", "ready_for_screening"]),
@@ -26,6 +30,13 @@ const resumeAnalysisSchema = z.object({
 });
 
 export type ResumeAnalysisOutput = z.infer<typeof resumeAnalysisSchema>;
+
+const screeningOutcomeSchema = z.object({
+  summary: z.string().min(1),
+  recommendation: z.enum(["advance", "reject", "needs_review"]),
+});
+
+export type ScreeningOutcomeOutput = z.infer<typeof screeningOutcomeSchema>;
 
 export const resumeAnalysisService = {
   async analyzeResume(input: {
@@ -66,7 +77,7 @@ export const resumeAnalysisService = {
           {
             role: "system",
             content:
-              "You are a recruiting analysis agent. Assess resume-job fit, explain pros/cons, and provide objective reasoning for fit and compatibility.",
+              "You are a recruiting analysis agent. Extract candidate identity from resume (full name and email if present), assess resume-job fit, explain pros/cons, and provide objective reasoning for fit and compatibility.",
           },
           {
             role: "user",
@@ -112,12 +123,20 @@ export const resumeAnalysisService = {
 
         if ("parsed" in item && item.parsed) {
           const parsed = item.parsed as ResumeAnalysisOutput;
+          const normalizedIdentity = {
+            fullName: parsed.candidateIdentity.fullName?.trim() || null,
+            // Do not fail the whole analysis if model emits an invalid email.
+            email: parsed.candidateIdentity.email?.trim() || null,
+          };
           console.info("[resume-analysis] parsed analysis successfully", {
             traceId,
             status: parsed.status,
             confidence: parsed.confidence,
           });
-          return parsed;
+          return {
+            ...parsed,
+            candidateIdentity: normalizedIdentity,
+          };
         }
       }
     }
@@ -127,5 +146,78 @@ export const resumeAnalysisService = {
       outputTypes: response.output.map((entry) => entry.type),
     });
     throw new AppError("AI analysis did not return a structured result.", 502, "AI_ANALYSIS_PARSE_FAILED");
+  },
+
+  async summarizeScreening(input: {
+    candidateName: string;
+    roleApplied: string;
+    durationSeconds: number;
+    fitScore: number;
+    compatibilityScore: number;
+    strengths: string[];
+    risks: string[];
+  }): Promise<ScreeningOutcomeOutput> {
+    // Heuristic fallback so completion still works without OpenAI.
+    const fallbackRecommendation: ScreeningOutcomeOutput["recommendation"] =
+      input.durationSeconds >= 240 && input.compatibilityScore >= 70
+        ? "advance"
+        : input.durationSeconds < 90
+          ? "reject"
+          : "needs_review";
+
+    if (!env.OPENAI_API_KEY) {
+      return {
+        summary: `Voice screening completed for ${input.candidateName} (${input.roleApplied}). Call duration was ${Math.max(
+          0,
+          Math.round(input.durationSeconds)
+        )} seconds. Auto recommendation: ${fallbackRecommendation.replace("_", " ")} based on duration and resume fit signals.`,
+        recommendation: fallbackRecommendation,
+      };
+    }
+
+    const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+    const response = await client.responses.parse({
+      model: env.OPENAI_MODEL,
+      input: [
+        {
+          role: "system",
+          content:
+            "You are a recruiting assistant. Produce a concise post-call summary and recommendation for next round. Be conservative when evidence is limited.",
+        },
+        {
+          role: "user",
+          content: `Candidate: ${input.candidateName}
+Role: ${input.roleApplied}
+Call duration (seconds): ${input.durationSeconds}
+Resume fit score: ${input.fitScore}
+Compatibility score: ${input.compatibilityScore}
+Known strengths: ${input.strengths.join(", ") || "None"}
+Known risks: ${input.risks.join(", ") || "None"}
+
+Return:
+1) summary: 2-4 sentences for recruiter panel.
+2) recommendation: one of advance, reject, needs_review.
+
+If duration is too short (< 90s), strongly prefer reject or needs_review.`,
+        },
+      ],
+      text: {
+        format: zodTextFormat(screeningOutcomeSchema, "screening_outcome"),
+      },
+    });
+
+    for (const output of response.output) {
+      if (output.type !== "message") continue;
+      for (const item of output.content) {
+        if ("parsed" in item && item.parsed) {
+          return item.parsed as ScreeningOutcomeOutput;
+        }
+      }
+    }
+
+    return {
+      summary: `Voice screening completed for ${input.candidateName}. Evidence was limited, so recruiter review is recommended before deciding next steps.`,
+      recommendation: "needs_review",
+    };
   },
 };

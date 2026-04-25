@@ -1,0 +1,12 @@
+port: 7880
+bind_addresses:
+  - ""
+rtc:
+  # Local Docker dev: avoid advertising public/srflx candidates that
+  # are often unreachable from the same machine/browser.
+  use_external_ip: false
+  tcp_port: 7881
+  port_range_start: 50100
+  port_range_end: 50200
+keys:
+  devkey: secret

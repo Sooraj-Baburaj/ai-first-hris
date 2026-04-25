@@ -18,6 +18,13 @@ const envSchema = z.object({
   API_BASE_URL: z.string().url().default("http://localhost:5000"),
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),
+  LIVEKIT_URL: z.string().url().default("ws://localhost:7880"),
+  LIVEKIT_API_KEY: z.string().optional(),
+  LIVEKIT_API_SECRET: z.string().optional(),
+  SCREENING_INVITE_BASE_URL: z.string().url().default("http://localhost:3000/candidate/screening"),
+  SCREENING_INVITE_TTL_MINUTES: z.coerce.number().int().positive().default(120),
+  DEEPGRAM_API_KEY: z.string().optional(),
+  ELEVEN_API_KEY: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

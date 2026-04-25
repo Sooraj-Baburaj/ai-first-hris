@@ -27,6 +27,18 @@ function initialsFromName(fullName: string) {
     .join("");
 }
 
+function screeningOutcomeTone(recommendation: "advance" | "reject" | "needs_review") {
+  if (recommendation === "advance") return "success" as const;
+  if (recommendation === "reject") return "danger" as const;
+  return "warning" as const;
+}
+
+function screeningOutcomeLabel(recommendation: "advance" | "reject" | "needs_review") {
+  if (recommendation === "advance") return "Advance";
+  if (recommendation === "reject") return "Reject";
+  return "Needs review";
+}
+
 export function CandidateList({
   candidates,
 }: {
@@ -94,18 +106,19 @@ export function CandidateList({
   return (
     <div className="grid gap-4 xl:grid-cols-[1.45fr_0.95fr]">
       <section className="rounded-3xl bg-[var(--surface-soft)] p-3 shadow-[var(--shadow-inset)]">
-        <div className="hidden grid-cols-[1.25fr_0.85fr_0.65fr_0.75fr_0.75fr_1fr] gap-3 px-4 py-3 text-xs font-medium uppercase tracking-[0.14em] text-[var(--quiet)] xl:grid">
+        <div className="hidden grid-cols-[1.2fr_0.8fr_0.65fr_0.7fr_0.7fr_0.75fr_1fr] gap-3 px-4 py-3 text-xs font-medium uppercase tracking-[0.14em] text-[var(--quiet)] xl:grid">
           <span>Candidate</span>
           <span>Stage</span>
           <span>Fit</span>
           <span>AI confidence</span>
           <span>Source</span>
+          <span>Screening</span>
           <span>Next action</span>
         </div>
         <div className="grid gap-3">
           {items.map((candidate) => (
             <article
-              className={`grid cursor-pointer gap-4 rounded-3xl bg-[var(--surface)] p-5 shadow-[var(--shadow-outline)] xl:grid-cols-[1.25fr_0.85fr_0.65fr_0.75fr_0.75fr_1fr] xl:items-center ${
+              className={`grid cursor-pointer gap-4 rounded-3xl bg-[var(--surface)] p-5 shadow-[var(--shadow-outline)] xl:grid-cols-[1.2fr_0.8fr_0.65fr_0.7fr_0.7fr_0.75fr_1fr] xl:items-center ${
                 candidate.id === selectedId ? "ring-2 ring-[var(--ring)]" : ""
               }`}
               key={candidate.id}
@@ -147,6 +160,13 @@ export function CandidateList({
               <p className="text-sm leading-[1.43] tracking-[0.14px] text-[var(--muted)]">
                 {toTitleCase(candidate.source)}
               </p>
+              {candidate.technicalScreening.outcome ? (
+                <StatusPill tone={screeningOutcomeTone(candidate.technicalScreening.outcome.recommendation)}>
+                  {screeningOutcomeLabel(candidate.technicalScreening.outcome.recommendation)}
+                </StatusPill>
+              ) : (
+                <StatusPill tone="warning">Pending</StatusPill>
+              )}
               <StatusPill
                 tone={
                   candidate.technicalScreening.status === "auto_sent" ||
@@ -245,6 +265,29 @@ export function CandidateList({
                   : "Send technical screening anyway"}
               </button>
             ) : null}
+            {selectedCandidate.technicalScreening.outcome ? (
+              <article className="mt-3 rounded-2xl bg-[var(--surface-soft)] p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-[var(--ink)]">Screening outcome</p>
+                  <StatusPill
+                    tone={screeningOutcomeTone(
+                      selectedCandidate.technicalScreening.outcome.recommendation,
+                    )}
+                  >
+                    {screeningOutcomeLabel(
+                      selectedCandidate.technicalScreening.outcome.recommendation,
+                    )}
+                  </StatusPill>
+                </div>
+                <p className="mt-2 text-sm leading-[1.5] tracking-[0.14px] text-[var(--muted)]">
+                  {selectedCandidate.technicalScreening.outcome.summary}
+                </p>
+              </article>
+            ) : (
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                Screening summary will appear here once the candidate completes the call.
+              </p>
+            )}
           </div>
         </aside>
       ) : null}

@@ -20,7 +20,7 @@ function toLabel(value: string) {
 }
 
 export function CandidatePortalExperience() {
-  const [email] = useState<string>(() => getDemoSession()?.email ?? "candidate@closedai.com");
+  const [email, setEmail] = useState<string>("candidate@closedai.com");
   const [status, setStatus] = useState<CandidateStatusResponseDto["status"] | null>(null);
   const [jobs, setJobs] = useState<CandidateJobListResponseDto["items"]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>("");
@@ -28,6 +28,18 @@ export function CandidatePortalExperience() {
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<"idle" | "uploading" | "success" | "error">("idle");
+
+  useEffect(() => {
+    const sessionEmail = getDemoSession()?.email;
+    if (sessionEmail) {
+      const frameId = window.requestAnimationFrame(() => {
+        setEmail(sessionEmail);
+      });
+      return () => {
+        window.cancelAnimationFrame(frameId);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +105,22 @@ export function CandidatePortalExperience() {
   }, [email, selectedJobId]);
 
   const timeline = useMemo(() => status?.timeline ?? [], [status]);
+  const screeningJoinHref = useMemo(() => {
+    const invitation = status?.technicalScreening.invitation;
+    if (!invitation) {
+      return null;
+    }
+
+    if (invitation.joinUrl?.trim()) {
+      return invitation.joinUrl;
+    }
+
+    if (invitation.id?.trim()) {
+      return `/candidate/screening/${invitation.id}`;
+    }
+
+    return null;
+  }, [status]);
 
   async function handleResumeSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -245,6 +273,26 @@ export function CandidatePortalExperience() {
                   <p className="mt-2 text-sm text-[var(--rose)]">
                     AI analysis could not complete. Your application is under manual recruiter review.
                   </p>
+                ) : null}
+                {status.technicalScreening.invitation ? (
+                  <div className="mt-4 rounded-2xl bg-[var(--surface-soft)] p-4">
+                    <p className="text-sm font-medium text-[var(--ink)]">closedAI screening invitation is ready</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      Voice-only first-round screening. No camera is required.
+                    </p>
+                    {screeningJoinHref ? (
+                      <Link
+                        className="mt-3 inline-flex min-h-10 items-center rounded-full bg-[var(--ink)] px-4 text-sm font-medium text-[var(--surface)]"
+                        href={screeningJoinHref}
+                      >
+                        Join screening
+                      </Link>
+                    ) : (
+                      <p className="mt-3 text-xs text-[var(--rose)]">
+                        Invitation link is not ready yet. Please refresh in a few seconds.
+                      </p>
+                    )}
+                  </div>
                 ) : null}
               </>
             ) : (

@@ -57,6 +57,25 @@ export interface ResumeAnalysisDetailsDto {
 export interface TechnicalScreeningDto {
   status: "not_sent" | "auto_sent" | "manual_sent";
   sentAt?: string;
+  invitation?: ScreeningInvitationDto;
+  outcome?: ScreeningOutcomeDto;
+}
+
+export interface ScreeningOutcomeDto {
+  completedAt: string;
+  durationSeconds: number;
+  summary: string;
+  recommendation: "advance" | "reject" | "needs_review";
+}
+
+export interface ScreeningInvitationDto {
+  id: string;
+  roomName: string;
+  joinUrl: string;
+  participantName: string;
+  createdAt: string;
+  expiresAt?: string;
+  joinedAt?: string;
 }
 
 export interface ApplicationTimelineEventDto {
@@ -146,6 +165,39 @@ export interface CandidateStatusDto {
 
 export interface CandidateStatusResponseDto {
   status: CandidateStatusDto;
+}
+
+export interface CandidateScreeningInviteDto {
+  candidateId: string;
+  fullName: string;
+  roleApplied: string;
+  agentName: string;
+  invitation: ScreeningInvitationDto;
+}
+
+export interface CandidateScreeningInviteResponseDto {
+  invite: CandidateScreeningInviteDto;
+}
+
+export interface CandidateJoinScreeningResponseDto {
+  roomName: string;
+  participantName: string;
+  agentName: string;
+  livekitUrl: string;
+  token: string;
+}
+
+export interface CandidateCompleteScreeningRequestDto {
+  durationSeconds: number;
+}
+
+export interface CandidateCompleteScreeningResponseDto {
+  candidateId: string;
+  stage: ApplicationStage;
+  status: ApplicationStatus;
+  technicalScreening: TechnicalScreeningDto;
+  summary: string;
+  nextAction: string;
 }
 
 export interface ResumeSubmissionResponseDto {

@@ -32,6 +32,22 @@ type CandidateStatusUpdateInput = {
   technicalScreening?: TechnicalScreeningDto;
 };
 
+type ScreeningInvitationInput = {
+  id: string;
+  roomName: string;
+  joinUrl: string;
+  participantName: string;
+  createdAt: Date;
+  expiresAt?: Date;
+};
+
+type ScreeningOutcomeInput = {
+  completedAt: Date;
+  durationSeconds: number;
+  summary: string;
+  recommendation: "advance" | "reject" | "needs_review";
+};
+
 function defaultNameFromEmail(email: string) {
   const local = email.split("@")[0] ?? "candidate";
   return local
@@ -106,6 +122,17 @@ export const candidateRepository = {
     );
   },
 
+  async updateIdentity(candidateId: string, input: { fullName?: string }) {
+    const nextSet: { fullName?: string } = {};
+    if (input.fullName?.trim()) {
+      nextSet.fullName = input.fullName.trim();
+    }
+    if (Object.keys(nextSet).length === 0) {
+      return CandidateModel.findById(candidateId);
+    }
+    return CandidateModel.findByIdAndUpdate(candidateId, { $set: nextSet }, { new: true });
+  },
+
   async updateCandidateStatus(candidateId: string, update: CandidateStatusUpdateInput) {
     const nextSet = {
       currentStage: update.stage,
@@ -137,6 +164,50 @@ export const candidateRepository = {
       {
         $set: {
           technicalScreening,
+        },
+      },
+      { new: true }
+    );
+  },
+
+  async setScreeningInvitation(candidateId: string, invitation: ScreeningInvitationInput) {
+    return CandidateModel.findByIdAndUpdate(
+      candidateId,
+      {
+        $set: {
+          "technicalScreening.status": "auto_sent",
+          "technicalScreening.sentAt": invitation.createdAt,
+          "technicalScreening.invitation": invitation,
+        },
+      },
+      { new: true }
+    );
+  },
+
+  async findByScreeningInviteId(inviteId: string) {
+    return CandidateModel.findOne({
+      "technicalScreening.invitation.id": inviteId,
+    });
+  },
+
+  async markScreeningInviteJoined(candidateId: string) {
+    return CandidateModel.findByIdAndUpdate(
+      candidateId,
+      {
+        $set: {
+          "technicalScreening.invitation.joinedAt": new Date(),
+        },
+      },
+      { new: true }
+    );
+  },
+
+  async setScreeningOutcome(candidateId: string, outcome: ScreeningOutcomeInput) {
+    return CandidateModel.findByIdAndUpdate(
+      candidateId,
+      {
+        $set: {
+          "technicalScreening.outcome": outcome,
         },
       },
       { new: true }

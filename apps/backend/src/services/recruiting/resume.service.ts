@@ -3,6 +3,11 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import type {
+  ApplicationStage,
+  ApplicationStatus,
+  CandidateCompleteScreeningResponseDto,
+  CandidateJoinScreeningResponseDto,
+  CandidateScreeningInviteResponseDto,
   CandidateJobListResponseDto,
   CandidateStatusResponseDto,
   ResumeSubmissionResponseDto,
@@ -19,6 +24,7 @@ import { candidateRepository } from "../../repositories/recruiting/candidate.rep
 import { jobRepository } from "../../repositories/recruiting/job.repository.js";
 import { resumeRepository } from "../../repositories/recruiting/resume.repository.js";
 import { resumeAnalysisService } from "../ai/resume-analysis.service.js";
+import { livekitTokenService } from "../ai/livekit-token.service.js";
 import { env } from "../../config/env.js";
 
 function sanitizeFileName(filename: string) {
@@ -46,6 +52,10 @@ function computeCompatibilityScore(metrics: ResumeFitMetricsDto) {
       metrics.experienceRelevance * 0.2 +
       metrics.domainAlignment * 0.4
   );
+}
+
+function buildInviteUrl(inviteId: string) {
+  return `${env.SCREENING_INVITE_BASE_URL.replace(/\/$/, "")}/${inviteId}`;
 }
 
 async function extractResumeText(file: { mimetype: ResumeFileType; buffer: Buffer }) {
@@ -170,6 +180,10 @@ export const resumeService = {
         compatibilityReasoning: analysis.compatibilityReasoning,
       };
       aiAnalysisFailed = false;
+      const parsedName = analysis.candidateIdentity.fullName?.trim();
+      await candidateRepository.updateIdentity(candidate._id.toString(), {
+        fullName: parsedName && parsedName.length > 0 ? parsedName : normalizedEmail,
+      });
       console.info("[resume-upload] AI analysis success", {
         traceId,
         status,
@@ -192,11 +206,33 @@ export const resumeService = {
     };
 
     if (!aiAnalysisFailed && compatibilityScore > 60) {
+      const inviteId = randomUUID();
+      const roomName = `screening-${candidate._id.toString()}`;
+      const inviteCreatedAt = new Date();
+      const inviteExpiresAt = new Date(
+        inviteCreatedAt.getTime() + env.SCREENING_INVITE_TTL_MINUTES * 60 * 1000
+      );
       technicalScreening = {
         status: "auto_sent",
-        sentAt: new Date().toISOString(),
+        sentAt: inviteCreatedAt.toISOString(),
+        invitation: {
+          id: inviteId,
+          roomName,
+          joinUrl: buildInviteUrl(inviteId),
+          participantName: candidate.fullName || normalizedEmail,
+          createdAt: inviteCreatedAt.toISOString(),
+          expiresAt: inviteExpiresAt.toISOString(),
+        },
       };
       nextAction = "Technical screening invitation sent automatically";
+      await candidateRepository.setScreeningInvitation(candidate._id.toString(), {
+        id: inviteId,
+        roomName,
+        joinUrl: buildInviteUrl(inviteId),
+        participantName: candidate.fullName || normalizedEmail,
+        createdAt: inviteCreatedAt,
+        expiresAt: inviteExpiresAt,
+      });
     }
 
     const updatedCandidate = await candidateRepository.updateCandidateStatus(candidate._id.toString(), {
@@ -307,6 +343,269 @@ export const resumeService = {
         };
       }),
       total: jobs.length,
+    };
+  },
+
+  async getScreeningInviteByEmail(email: string): Promise<CandidateScreeningInviteResponseDto> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const candidate = await candidateRepository.findByEmail(normalizedEmail);
+    if (!candidate || !candidate.technicalScreening?.invitation) {
+      throw new AppError("No screening invitation found for this candidate.", 404, "INVITATION_NOT_FOUND");
+    }
+
+    return {
+      invite: {
+        candidateId: candidate._id.toString(),
+        fullName: candidate.fullName,
+        roleApplied: candidate.roleApplied,
+        agentName: "closedAI",
+        invitation: {
+          id: candidate.technicalScreening.invitation.id,
+          roomName: candidate.technicalScreening.invitation.roomName,
+          joinUrl: candidate.technicalScreening.invitation.joinUrl,
+          participantName: candidate.technicalScreening.invitation.participantName,
+          createdAt: candidate.technicalScreening.invitation.createdAt.toISOString(),
+          expiresAt: candidate.technicalScreening.invitation.expiresAt?.toISOString(),
+          joinedAt: candidate.technicalScreening.invitation.joinedAt?.toISOString(),
+        },
+      },
+    };
+  },
+
+  async getScreeningInviteById(inviteId: string): Promise<CandidateScreeningInviteResponseDto> {
+    const candidate = await candidateRepository.findByScreeningInviteId(inviteId);
+    if (!candidate || !candidate.technicalScreening?.invitation) {
+      throw new AppError("Screening invitation not found.", 404, "INVITATION_NOT_FOUND");
+    }
+
+    return {
+      invite: {
+        candidateId: candidate._id.toString(),
+        fullName: candidate.fullName,
+        roleApplied: candidate.roleApplied,
+        agentName: "closedAI",
+        invitation: {
+          id: candidate.technicalScreening.invitation.id,
+          roomName: candidate.technicalScreening.invitation.roomName,
+          joinUrl: candidate.technicalScreening.invitation.joinUrl,
+          participantName: candidate.technicalScreening.invitation.participantName,
+          createdAt: candidate.technicalScreening.invitation.createdAt.toISOString(),
+          expiresAt: candidate.technicalScreening.invitation.expiresAt?.toISOString(),
+          joinedAt: candidate.technicalScreening.invitation.joinedAt?.toISOString(),
+        },
+      },
+    };
+  },
+
+  async joinScreeningByInviteId(inviteId: string): Promise<CandidateJoinScreeningResponseDto> {
+    const candidate = await candidateRepository.findByScreeningInviteId(inviteId);
+    if (!candidate || !candidate.technicalScreening?.invitation) {
+      throw new AppError("Screening invitation not found.", 404, "INVITATION_NOT_FOUND");
+    }
+
+    const invitation = candidate.technicalScreening.invitation;
+    if (invitation.expiresAt && invitation.expiresAt.getTime() < Date.now()) {
+      throw new AppError("This screening invitation has expired.", 410, "INVITATION_EXPIRED");
+    }
+
+    const participantName = invitation.participantName || candidate.fullName || candidate.email;
+    const participantIdentity = `candidate-${candidate._id.toString()}-${randomUUID().slice(0, 8)}`;
+    
+    // Fetch resume text for agent context.
+    // Do not re-parse uploaded PDFs at join time; some PDFs have broken xref tables.
+    // We fallback safely so screening can still start.
+    let resumeText = "Resume text unavailable.";
+    if (candidate.latestResumeId) {
+       const resumeDoc = await resumeRepository.findLatestByCandidateId(candidate._id.toString());
+       if (resumeDoc && resumeDoc.storagePath) {
+          try {
+             if (resumeDoc.mimeType === "text/plain") {
+               const fs = await import("node:fs/promises");
+               resumeText = (await fs.readFile(resumeDoc.storagePath, "utf8")).slice(0, 12000);
+             }
+          } catch (error) {
+             console.warn("[resume.service] resume context unavailable, using fallback text", {
+               candidateId: candidate._id.toString(),
+               reason: error instanceof Error ? error.message : "unknown",
+             });
+          }
+       }
+    }
+
+    // Fetch Job description
+    let jobTitle = candidate.roleApplied || "General Application";
+    let jobDescription = "We are looking for a candidate with strong problem-solving skills.";
+    
+    // Try to find the associated application and job
+    const applications = await applicationRepository.listByCandidateId(candidate._id.toString());
+    const latestApplication = applications[0];
+    if (latestApplication) {
+       const job = await jobRepository.findById(latestApplication.jobId.toString());
+       if (job) {
+          jobTitle = job.title;
+          jobDescription = job.description;
+       }
+    }
+
+    const metadata = {
+      candidateName: candidate.fullName,
+      candidateEmail: candidate.email,
+      roleApplied: candidate.roleApplied,
+      jobTitle,
+      jobDescription,
+      resumeText,
+      fitScore: candidate.fitScore,
+      strengths: candidate.fitMetrics?.strengths,
+      risks: candidate.fitMetrics?.risks
+    };
+
+    // Dispatch the agent explicitly
+    await livekitTokenService.dispatchScreeningAgent({
+       roomName: invitation.roomName,
+       metadata
+    });
+
+    const token = await livekitTokenService.createCandidateJoinToken({
+      roomName: invitation.roomName,
+      participantName,
+      participantIdentity,
+    });
+    
+    await candidateRepository.markScreeningInviteJoined(candidate._id.toString());
+
+    return {
+      roomName: invitation.roomName,
+      participantName,
+      agentName: "closedAI",
+      livekitUrl: env.LIVEKIT_URL,
+      token,
+    };
+  },
+
+  async completeScreeningByInviteId(
+    inviteId: string,
+    input: { durationSeconds: number }
+  ): Promise<CandidateCompleteScreeningResponseDto> {
+    const candidate = await candidateRepository.findByScreeningInviteId(inviteId);
+    if (!candidate || !candidate.technicalScreening?.invitation) {
+      throw new AppError("Screening invitation not found.", 404, "INVITATION_NOT_FOUND");
+    }
+
+    const durationSeconds = Math.max(0, Math.round(input.durationSeconds || 0));
+    const outcome = await resumeAnalysisService.summarizeScreening({
+      candidateName: candidate.fullName,
+      roleApplied: candidate.roleApplied,
+      durationSeconds,
+      fitScore: candidate.fitScore,
+      compatibilityScore: candidate.compatibilityScore,
+      strengths: candidate.fitMetrics?.strengths ?? [],
+      risks: candidate.fitMetrics?.risks ?? [],
+    });
+
+    let stage: ApplicationStage = "under_review";
+    let status: ApplicationStatus = "under_review";
+    let nextAction = "Recruiter to review screening summary and decide next steps.";
+
+    if (outcome.recommendation === "advance") {
+      stage = "interview";
+      status = "interview";
+      nextAction = "Schedule next-round interview with hiring panel.";
+    } else if (outcome.recommendation === "reject") {
+      stage = "rejected";
+      status = "rejected";
+      nextAction = "Send rejection decision and close application.";
+    }
+
+    const completedAt = new Date();
+    const updatedCandidate = await candidateRepository.updateCandidateStatus(candidate._id.toString(), {
+      stage,
+      status,
+      summary: outcome.summary,
+      nextAction,
+      reviewState: outcome.recommendation === "needs_review" ? "recruiter_review" : "auto_ready",
+      confidence: candidate.confidence,
+      fitScore: candidate.fitScore,
+      compatibilityScore: candidate.compatibilityScore,
+      fitMetrics: candidate.fitMetrics,
+      analysisDetails: candidate.analysisDetails,
+      aiAnalysisFailed: candidate.aiAnalysisFailed,
+      technicalScreening: {
+        status: candidate.technicalScreening.status,
+        sentAt:
+          typeof candidate.technicalScreening.sentAt === "string"
+            ? candidate.technicalScreening.sentAt
+            : candidate.technicalScreening.sentAt?.toISOString(),
+        invitation: {
+          id: candidate.technicalScreening.invitation.id,
+          roomName: candidate.technicalScreening.invitation.roomName,
+          joinUrl: candidate.technicalScreening.invitation.joinUrl,
+          participantName: candidate.technicalScreening.invitation.participantName,
+          createdAt: candidate.technicalScreening.invitation.createdAt.toISOString(),
+          expiresAt: candidate.technicalScreening.invitation.expiresAt?.toISOString(),
+          joinedAt: candidate.technicalScreening.invitation.joinedAt?.toISOString(),
+        },
+        outcome: {
+          completedAt: completedAt.toISOString(),
+          durationSeconds,
+          summary: outcome.summary,
+          recommendation: outcome.recommendation,
+        },
+      },
+    });
+
+    await candidateRepository.setScreeningOutcome(candidate._id.toString(), {
+      completedAt,
+      durationSeconds,
+      summary: outcome.summary,
+      recommendation: outcome.recommendation,
+    });
+
+    const latestApplication = await applicationRepository.findLatestByCandidateId(candidate._id.toString());
+    if (latestApplication) {
+      await applicationRepository.upsert(candidate._id.toString(), latestApplication.jobId.toString(), {
+        stage,
+        status,
+        confidence: candidate.confidence,
+      });
+      await applicationRepository.addTimelineEvent(candidate._id.toString(), latestApplication.jobId.toString(), {
+        id: randomUUID(),
+        label: "Voice screening completed",
+        detail: `Outcome: ${outcome.recommendation.replace("_", " ")}. ${outcome.summary}`,
+        at: completedAt,
+      });
+    }
+
+    const effectiveCandidate = updatedCandidate ?? candidate;
+    return {
+      candidateId: effectiveCandidate._id.toString(),
+      stage: effectiveCandidate.currentStage,
+      status: effectiveCandidate.applicationStatus,
+      technicalScreening: {
+        status: effectiveCandidate.technicalScreening.status,
+        sentAt:
+          typeof effectiveCandidate.technicalScreening.sentAt === "string"
+            ? effectiveCandidate.technicalScreening.sentAt
+            : effectiveCandidate.technicalScreening.sentAt?.toISOString(),
+        invitation: effectiveCandidate.technicalScreening.invitation
+          ? {
+              id: effectiveCandidate.technicalScreening.invitation.id,
+              roomName: effectiveCandidate.technicalScreening.invitation.roomName,
+              joinUrl: effectiveCandidate.technicalScreening.invitation.joinUrl,
+              participantName: effectiveCandidate.technicalScreening.invitation.participantName,
+              createdAt: effectiveCandidate.technicalScreening.invitation.createdAt.toISOString(),
+              expiresAt: effectiveCandidate.technicalScreening.invitation.expiresAt?.toISOString(),
+              joinedAt: effectiveCandidate.technicalScreening.invitation.joinedAt?.toISOString(),
+            }
+          : undefined,
+        outcome: {
+          completedAt: completedAt.toISOString(),
+          durationSeconds,
+          summary: outcome.summary,
+          recommendation: outcome.recommendation,
+        },
+      },
+      summary: outcome.summary,
+      nextAction,
     };
   },
 };

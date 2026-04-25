@@ -27,12 +27,71 @@ type CandidateLike = {
   technicalScreening: {
     status: TechnicalScreeningDto["status"];
     sentAt?: string | Date;
+    invitation?: {
+      id: string;
+      roomName: string;
+      joinUrl: string;
+      participantName: string;
+      createdAt: string | Date;
+      expiresAt?: string | Date;
+      joinedAt?: string | Date;
+    };
+    outcome?: {
+      completedAt: string | Date;
+      durationSeconds: number;
+      summary: string;
+      recommendation: "advance" | "reject" | "needs_review";
+    };
   };
   summary: string;
   nextAction: string;
   reviewState: CandidateSummaryDto["reviewState"];
   updatedAt?: Date;
 };
+
+function toPlainInvitation(
+  invitation:
+    | {
+        id?: string;
+        roomName?: string;
+        joinUrl?: string;
+        participantName?: string;
+        createdAt?: string | Date;
+        expiresAt?: string | Date;
+        joinedAt?: string | Date;
+        _doc?: {
+          id?: string;
+          roomName?: string;
+          joinUrl?: string;
+          participantName?: string;
+          createdAt?: string | Date;
+          expiresAt?: string | Date;
+          joinedAt?: string | Date;
+        };
+      }
+    | undefined
+) {
+  if (!invitation) {
+    return undefined;
+  }
+
+  const source = invitation._doc ?? invitation;
+  if (!source.id || !source.joinUrl || !source.roomName) {
+    return undefined;
+  }
+
+  return {
+    id: source.id,
+    roomName: source.roomName,
+    joinUrl: source.joinUrl,
+    participantName: source.participantName ?? "",
+    createdAt:
+      typeof source.createdAt === "string" ? source.createdAt : source.createdAt?.toISOString() ?? "",
+    expiresAt:
+      typeof source.expiresAt === "string" ? source.expiresAt : source.expiresAt?.toISOString(),
+    joinedAt: typeof source.joinedAt === "string" ? source.joinedAt : source.joinedAt?.toISOString(),
+  };
+}
 
 type ResumeLike = {
   _id: { toString(): string };
@@ -112,6 +171,18 @@ export function toCandidateSummaryDto(candidate: CandidateLike): CandidateSummar
         typeof candidate.technicalScreening?.sentAt === "string"
           ? candidate.technicalScreening?.sentAt
           : candidate.technicalScreening?.sentAt?.toISOString(),
+      invitation: toPlainInvitation(candidate.technicalScreening?.invitation),
+      outcome: candidate.technicalScreening?.outcome
+        ? {
+            completedAt:
+              typeof candidate.technicalScreening.outcome.completedAt === "string"
+                ? candidate.technicalScreening.outcome.completedAt
+                : candidate.technicalScreening.outcome.completedAt.toISOString(),
+            durationSeconds: candidate.technicalScreening.outcome.durationSeconds,
+            summary: candidate.technicalScreening.outcome.summary,
+            recommendation: candidate.technicalScreening.outcome.recommendation,
+          }
+        : undefined,
     },
     summary: candidate.summary,
     nextAction: candidate.nextAction,
@@ -170,6 +241,18 @@ export function toCandidateStatusDto(payload: {
         typeof payload.candidate.technicalScreening?.sentAt === "string"
           ? payload.candidate.technicalScreening?.sentAt
           : payload.candidate.technicalScreening?.sentAt?.toISOString(),
+      invitation: toPlainInvitation(payload.candidate.technicalScreening?.invitation),
+      outcome: payload.candidate.technicalScreening?.outcome
+        ? {
+            completedAt:
+              typeof payload.candidate.technicalScreening.outcome.completedAt === "string"
+                ? payload.candidate.technicalScreening.outcome.completedAt
+                : payload.candidate.technicalScreening.outcome.completedAt.toISOString(),
+            durationSeconds: payload.candidate.technicalScreening.outcome.durationSeconds,
+            summary: payload.candidate.technicalScreening.outcome.summary,
+            recommendation: payload.candidate.technicalScreening.outcome.recommendation,
+          }
+        : undefined,
     },
     summary: payload.candidate.summary,
     timeline: payload.timeline,

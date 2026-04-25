@@ -32,6 +32,21 @@ export interface CandidateDocument {
   technicalScreening: {
     status: "not_sent" | "auto_sent" | "manual_sent";
     sentAt?: Date;
+    invitation?: {
+      id: string;
+      roomName: string;
+      joinUrl: string;
+      participantName: string;
+      createdAt: Date;
+      expiresAt?: Date;
+      joinedAt?: Date;
+    };
+    outcome?: {
+      completedAt: Date;
+      durationSeconds: number;
+      summary: string;
+      recommendation: "advance" | "reject" | "needs_review";
+    };
   };
   summary: string;
   nextAction: string;
@@ -79,6 +94,31 @@ const candidateSchema = new Schema<CandidateDocument>(
       type: {
         status: { type: String, required: true, default: "not_sent" },
         sentAt: { type: Date, required: false },
+        invitation: {
+          type: {
+            id: { type: String, required: true },
+            roomName: { type: String, required: true },
+            joinUrl: { type: String, required: true },
+            participantName: { type: String, required: true },
+            createdAt: { type: Date, required: true },
+            expiresAt: { type: Date, required: false },
+            joinedAt: { type: Date, required: false },
+          },
+          required: false,
+        },
+        outcome: {
+          type: {
+            completedAt: { type: Date, required: true },
+            durationSeconds: { type: Number, required: true },
+            summary: { type: String, required: true },
+            recommendation: {
+              type: String,
+              required: true,
+              enum: ["advance", "reject", "needs_review"],
+            },
+          },
+          required: false,
+        },
       },
       required: true,
     },
