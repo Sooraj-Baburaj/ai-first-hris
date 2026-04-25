@@ -2,30 +2,229 @@
 
 ## Project Identity
 
-Closed AI is an AI-first workforce lifecycle platform for HR teams, candidates, and employees. It transforms HR from a passive database into an active multimodal agent by orchestrating text, voice, document understanding, and workflow automation across hiring, onboarding, employee support, and upskilling.
+Closed AI is an AI-first workforce lifecycle platform for HR teams. It transforms HR from a passive system of records into an active multimodal AI workforce layer that can understand documents, speak with candidates and employees, automate workflows, answer questions, coordinate tasks, and surface intelligence across the employee lifecycle.
 
-Treat the system as a production-grade, multi-tenant full-stack TypeScript monorepo that may include a dashboard frontend, an Express/MongoDB backend, shared packages, AI agents, voice/chat channels, document processing, ticketing integrations, and workflow automation.
+Treat the system as a production-grade, multi-tenant full-stack TypeScript monorepo. It may include a dashboard frontend, Express/MongoDB backend, shared packages, AI agents, voice/chat channels, document processing, ticketing integrations, workflow automation, and third-party communication channels.
 
-Write clean, modular, strictly typed code. Prefer small files, focused functions, guard clauses, and existing project patterns over broad refactors.
+Write clean, modular, strictly typed code. Prefer small files, focused functions, guard clauses, and existing project patterns over broad refactors. Build for reliability, auditability, and enterprise readiness.
+
+## First-Version Product Focus
+
+The first dashboard version is primarily for HR admins and recruiters.
+
+Candidates and employees may interact with Closed AI through chat, voice, WhatsApp, email, or embedded agent flows, but the main dashboard should serve internal HR/recruiting teams who manage hiring, onboarding, employee support, workflows, documents, and insights.
+
+Do not design the first dashboard as a general consumer-facing app for all user types. Candidate and employee experiences can exist as assisted workflows, portals, or communication endpoints, but the operational control surface belongs to HR teams first.
+
+## Brand Personality
+
+Closed AI should feel:
+
+- Calm
+- Intelligent
+- Trustworthy
+
+The product should feel premium, but not flashy. Trust matters more than spectacle. The design should communicate that Closed AI is capable, secure, accurate, and composed enough to handle sensitive HR workflows.
+
+Avoid overly playful, loud, futuristic, or gimmicky AI visuals. The product should feel like a serious AI operating layer for modern HR teams.
+
+## Visual Direction
+
+Use a light-first interface, with dark mode considered later.
+
+The first version should prioritize clarity, document readability, dense-but-calm workflows, accessibility, and enterprise comfort. HR teams will spend time reading candidate details, documents, summaries, ticket histories, timelines, and structured data, so the UI should be easy to scan for long sessions.
+
+A refined light mode is preferred over a dramatic dark AI-console aesthetic.
+
+## Product Feel
+
+Closed AI should feel closest to a polished SaaS dashboard with selective premium AI-product polish.
+
+It should not feel like a marketing landing page. It should also not feel like an overly dense command center in the first version. The right feeling is a clean HR operating system: organized, confident, workflow-driven, and quietly intelligent.
+
+Use premium AI touches where they help: agent status, confidence indicators, summaries, suggested actions, automation timelines, conversation intelligence, document extraction, and workflow recommendations.
 
 ## Product Pillars
 
-Build features around these pillars:
+### 1. Agentic Talent Acquisition
 
-- Agentic Talent Acquisition: resume parsing, JD matching, fit scores, screening summaries, candidate status tracking, and optional voice-driven technical screening.
-- Multimodal Autonomous Onboarding: offer acceptance, outbound voice follow-up, start-date coordination, document collection, and WhatsApp/email workflows.
-- 24/7 Employee And Candidate Helpdesk: voice/chat support for application status, HR policy questions, IT tickets, HR complaints, and internal knowledge lookup.
-- Hyper-Personalized Learning And Development: role-aware learning paths, skill-gap analysis, career copiloting, and upskilling recommendations.
+Support recruiting teams with:
 
-Nice-to-have roadmap areas include sentiment pulse checks, automated exit interviews, and Slack/Discord/Teams integrations.
+- Resume parsing
+- Candidate profile extraction
+- Job description matching
+- Fit scores
+- Screening summaries
+- Candidate status tracking
+- Pipeline management
+- Interview coordination
+- Optional voice-driven technical screening
+- Recruiter-facing AI recommendations
 
-## Domain Priorities
+### 2. Multimodal Autonomous Onboarding
 
-- Reduce the resume black hole by giving HR fast, explainable candidate screening while keeping candidates informed.
-- Reduce onboarding drop-off by automating handoffs between offer acceptance, data collection, and day-one readiness.
-- Reduce helpdesk bottlenecks by resolving repetitive HR/IT questions and routing actionable tickets.
-- Make employee growth personalized instead of a static course library.
-- Handle candidate and employee data with privacy, auditability, and least-privilege access in mind.
+Support post-offer and pre-joining workflows with:
+
+- Offer acceptance tracking
+- Outbound voice follow-up
+- Start-date coordination
+- Document collection
+- Missing document reminders
+- WhatsApp/email workflows
+- Onboarding task checklists
+- HR escalation when automation cannot complete a task
+
+### 3. 24/7 Employee And Candidate Helpdesk
+
+Support automated HR assistance through:
+
+- Application status questions
+- HR policy questions
+- Employee support tickets
+- IT ticket intake or routing
+- HR complaints
+- Internal knowledge lookup
+- Voice/chat support
+- Escalation to human HR teams
+- Conversation history and resolution tracking
+
+### 4. Hyper-Personalized Learning And Development
+
+Support employee growth with:
+
+- Role-aware learning paths
+- Skill-gap analysis
+- Career copiloting
+- Upskilling recommendations
+- Learning progress tracking
+- Manager/HR insights
+- Personalized development plans
+
+## Roadmap Areas
+
+Nice-to-have future areas include:
+
+- Sentiment pulse checks
+- Automated exit interviews
+- Slack integrations
+- Discord integrations
+- Microsoft Teams integrations
+- Advanced workforce analytics
+- Internal mobility recommendations
+- Employee engagement intelligence
+
+## Dashboard UX Principles
+
+The dashboard should be built for HR admins and recruiters who need to move quickly and confidently.
+
+Prioritize:
+
+- Clear navigation
+- Fast scanning
+- Strong information hierarchy
+- Practical workflows
+- Actionable AI suggestions
+- Audit trails
+- Human handoff states
+- Multi-tenant account separation
+- Secure handling of candidate and employee data
+
+Avoid:
+
+- Landing-page-style hero sections inside the app
+- Decorative AI gimmicks
+- Overly abstract visuals
+- Excessive gradients
+- Unnecessary animation
+- Dense tables without summaries or filters
+- AI decisions without explanation or confidence context
+
+## Core Dashboard Areas
+
+A strong first version may include:
+
+- Overview dashboard
+- Candidate pipeline
+- Candidate profile pages
+- Job/requisition management
+- Resume/JD matching view
+- AI screening summaries
+- Onboarding tracker
+- Document collection status
+- Helpdesk inbox
+- Ticket and conversation history
+- AI agent activity feed
+- Workflow automation logs
+- Knowledge base management
+- Learning recommendations
+- Settings, teams, roles, and tenant controls
+
+## AI Behavior Expectations
+
+AI features should feel useful, accountable, and explainable.
+
+When showing AI output, prefer:
+
+- Summaries with source context
+- Confidence indicators where appropriate
+- Suggested next actions
+- Clear human review states
+- Editable AI-generated drafts
+- Escalation paths
+- Audit-friendly logs
+
+Do not present AI as magic. Present it as a capable assistant that accelerates HR work while keeping humans in control.
+
+## Engineering Expectations
+
+Build as a production-grade multi-tenant TypeScript system.
+
+Prefer:
+
+- Strict TypeScript
+- Clear domain models
+- Reusable shared types
+- Server-side validation
+- Guard clauses
+- Modular services
+- Small React components
+- Accessible UI primitives
+- Secure API boundaries
+- Tenant-aware data access
+- Explicit loading, empty, and error states
+
+Avoid:
+
+- Broad rewrites
+- Untyped objects
+- Hardcoded tenant data
+- Mock-only flows pretending to be production logic
+- Large components with mixed responsibilities
+- AI features with no persistence or audit trail
+- Sensitive HR data leaking across tenants
+
+## Data Sensitivity
+
+Closed AI handles sensitive HR, candidate, and employee information.
+
+Always consider:
+
+- Privacy
+- Consent
+- Role-based access
+- Tenant isolation
+- Audit logs
+- Secure document handling
+- Clear escalation paths
+- Compliance-friendly data flows
+
+Candidate and employee records should be treated as sensitive by default.
+
+## Recommended First-Version Positioning
+
+Closed AI is a calm, intelligent, trustworthy AI workforce platform for HR teams.
+
+The first version should be a polished SaaS dashboard for HR admins and recruiters, focused on talent acquisition, onboarding, helpdesk automation, and workforce intelligence. It should be light-first, enterprise-ready, and practical, with premium AI interactions used to make complex HR workflows faster, clearer, and easier to manage.
 
 ## Workspace Commands
 
@@ -66,6 +265,6 @@ If the summary file does not exist, do not create it for tiny changes. Create it
 ## Verification
 
 - Run the most specific relevant checks after changes.
-- For frontend work, prefer `pnpm --filter dashboard-front lint` and type/build checks when available.
+- For frontend work, prefer `pnpm --filter @closed-ai/dashboard-front lint` and type/build checks when available.
 - For backend work, run the backend lint/test commands when the backend package exists.
 - If a check cannot run because the package/script does not exist yet, mention that in the final response.

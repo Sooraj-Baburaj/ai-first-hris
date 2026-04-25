@@ -17,6 +17,7 @@ These rules apply to `apps/dashboard-front`.
 
 ## Styling
 
+- Before visual or UI changes, read the repo-root `.impeccable.md` and use it as the dashboard design-system source of truth.
 - Use Tailwind CSS. Do not add SCSS or raw CSS files unless a highly specific global override is required.
 - Keep UI components typed, composable, and accessible.
 - Handle loading, error, and empty states for API-backed views.
